@@ -54,7 +54,9 @@ plotHistFunc <- function(df, title, na.rm = TRUE, ...) {
 ```
 
 
-# Problem Set 2
+# Problem Set 2: What determines wages?
+
+What factors determine a person's wage is of just importance for policy. Today we are do some simple analyses using a dataset on individual characteristics and wage outcomes in 1980. You can find the CVS dataset under data in Canvas (Wages).
 
 ```{r, message=FALSE, echo=FALSE}
 wages <- read_csv("../data/wages.csv")
@@ -62,14 +64,18 @@ wages <- read_csv("../data/wages.csv")
 
 ## 1. Normal statistics
 
-```{r, echo=FALSE, warning=FALSE, error=FALSE}
+Dothenormaldescriptivestatisticsforthevariableswearegoingtouse.Anything stand out among these numbers?
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
 summary(wages)
 plotHistFunc(wages)
 ```
 
-The various variables are highly skewed.
+The various variables are highly skewed and many missing data (NAs)
 
 ## 2. Correlation
+
+Find the correlations between the variables we will use. What stands out here?
 
 ```{r}
 
@@ -114,15 +120,17 @@ cor_m %>% filter(abs(cor) > 0.45)
 
 ## 3. Regression 1 (Hours and IQ)
 
+Run a regression with hours and IQ scoreas the explanatory variables. What are the coefficients for both and their interpretation (remember to include whether they are statistically significant).
+
 ```{r}
 fit1 <- lm(wage~hours+IQ, wages)
 summary(fit1)
 plot_coeffs(fit1)
 ```
 
-This means that if `hours` differed by one unit, wage will differ by `r summary(fit1)$coefficients["hours", "Estimate"]` units, on average.
+This means that if `hours` differed by one unit, wage will differ by `r summary(fit1)$coefficients["hours", "Estimate"]` units, on average, while holding `IQ` constant.
 
-This means that if `IQ` differed by one unit, wage will differ by `r summary(fit1)$coefficients["IQ", "Estimate"]` units, on average.
+This means that if `IQ` differed by one unit, wage will differ by `r summary(fit1)$coefficients["IQ", "Estimate"]` units, on average, while holding `hours` constant.  This is statistically significant at the 0.001 percent level.
 
 We would expect an average monthly earning (`wage`) to be `r summary(fit1)$coefficients["(Intercept)","Estimate"]`
 
@@ -135,6 +143,8 @@ The model is signficant
 The Adjusted R2 value is `r round(summary(fit1)$adj.r.square, 4)`. This tells us that `r round(summary(fit1)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours and IQ.
 
 ## 4. Regression 2 (Education)
+
+Run the same regression as in Q3, but now add education as an additional explanatory variable. What are the coefficients and their interpretations (remember to include whether they are statistically significant).
 
 ```{r}
 fit2 <- lm(wage~hours+IQ+educ, wages)
@@ -162,6 +172,8 @@ The Adjusted R2 value is `r round(summary(fit2)$adj.r.square, 4)`. This tells us
 
 ## 5. Explain
 
+Explain why the coefficients change between the two regression. Are the changes in the direction you would expect?
+
 ```{r}
 fit21 <- lm(wage~educ, wages)
 summary(fit21)
@@ -180,6 +192,8 @@ The coefficient of `IQ` decreased from `r summary(fit22)$coefficients["IQ", "Est
 
 
 ## 6. Regression 3 (Experience and Tenure)
+
+Run a regression with hours, IQs core, education, age, experience, and tenureas the explanatory variables. Interpret the results.
 
 ```{r}
 fit3 <- lm(wage~hours+IQ+educ+age+exper+tenure, wages)
@@ -218,6 +232,8 @@ The model is signficant
 The Adjusted R2 value is `r round(summary(fit3)$adj.r.square, 4)`. This tells us that `r round(summary(fit3)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours, IQ, educ, age, exper, and tenure.
 
 ## 7. Explain
+
+Explain why the coefficients change from the model in Q4.Does this make sense and why? (Hint: think what is behind the correlations you observed)
 
 The coefficient for `hours` changed from `r summary(fit2)$coefficients["hours", "Estimate"]` to `r summary(fit3)$coefficients["hours", "Estimate"]`. This is not a significant change.
 
@@ -258,11 +274,15 @@ The coefficient for `educ` increased from `r summary(fit31)$coefficients["educ",
 
 ## 8. F-test
 
+What does the F-test tell you about the model in Q6? What about the R2 and adjusted R2?
+
 The model is significant
 
 The R2 value is `r round(summary(fit3)$r.square, 4)`.  The Adjusted R2 value is `r round(summary(fit3)$adj.r.square, 4)`. This tells us that `r round(summary(fit3)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours, IQ, educ, age, exper, and tenure.
 
 ## 9. Drop tenure and hours
+
+Can we drop tenure and hours? (Do a joint test). What are the results and how do we interpret them?
 
 Both `tenure` and `hours` are not significant, therefore can be removed.  The joint test fails to reject the null hypothesis that tenure = hours = 0.
 
@@ -278,6 +298,8 @@ linearHypothesis(fit3, Hnull)
 
 ## 10 Experience and tenure effect
 
+Can you rule out that the effect of experience overall and tenure at the current job have the same effect on wage?(
+
 The coefficient of `IQ` changed from `r summary(fit3)$coefficients["IQ", "Estimate"]` to `r summary(fit4)$coefficients["IQ", "Estimate"]`.  The change is not significant.
 
 The coefficient of `educ` increased from `r summary(fit3)$coefficients["educ", "Estimate"]` to `r summary(fit4)$coefficients["educ", "Estimate"]`.  The change is not significant.
@@ -289,6 +311,8 @@ The coefficient of `exper` increased from `r summary(fit3)$coefficients["exper",
 The Adjusted R2 value changed from `r round(summary(fit3)$adj.r.square, 4)` to `r round(summary(fit4)$adj.r.square, 4)`.
 
 ## 11 Regression 4 (Parental Education)
+
+If you have time, try to add parental education to the last model. Think about what changes. Also, try some joint hypotheses (for example, parental education have similar effect; difference between age and experience).
 
 ```{r}
 fit5 <- lm(wage~IQ+educ+age+exper+meduc+feduc, wages)

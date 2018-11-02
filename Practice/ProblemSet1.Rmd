@@ -1,0 +1,91 @@
+---
+title: "In-class problem set 1"
+author: "Marjorie Blanco"
+date: "10/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+```
+
+# Problem Set 1: Alumni Giving
+
+Alumni donations are an important source of revenue for colleges and universities. If administrators could determine the factors that influence increases in the percentages of alumni who make a donation, they might be able to implement policies that could lead to increased revenues. The data set Alumni.csv on Canvas contains information on alumni giving rate (almunigivingrate) and two possible determinants, percent of classes with less than 20 students (classlt20) and student/faculty ratio (sfratio).
+
+```{r, echo=FALSE, message=FALSE}
+Alumni <- read_csv("../data/Alumni.csv")
+```
+
+## Problem 1
+
+Use ggplot to draw scatter plots of the data, i.e. alumni giving rate vs each of the two other university characteristics (clssslt20 and sfratio). Try to experiment with jitter. Comment on whether it appears that linear models might be appropriate.
+
+```{r}
+ggplot(data = Alumni, aes(x =  classeslt20, y = alumnigivingrate)) +
+  theme_classic() +
+  geom_point() +
+  geom_smooth(method = "lm") 
+
+ggplot(data = Alumni, aes(x =  sfratio, y = alumnigivingrate)) +
+  theme_classic() +
+  geom_point() +
+  geom_smooth(method = "lm") 
+```
+
+## Problem 2
+
+Use tidyverse to find the means, standard deviations, and min/max for each of the three variables. This is more cumbersome than it sounds. If you want a challenge, figure out how to write this with a function and call it for each variable.
+
+```{r}
+Alumni$school <- NULL
+data_long <- gather(Alumni, factor_key=TRUE)
+data_long %>% group_by(key) %>%
+  summarise(mean= mean(value), sd= sd(value), max = max(value),min = min(value))
+```
+
+## Problem 3
+
+Run a regression model with alumni giving rate as the dependent variable and the percent classes with less than 20 students as the explanatory variable.
+
+a. What is the interpretation of the estimated coefficients? Make sure to discuss whether it is statistically significant and, if so, at what level.
+
+```{r}
+fit <- lm(alumnigivingrate~classeslt20, data = Alumni)
+summary(fit)
+```
+
+For a one-percentage point increase in the number of class with less than 20 (`classeslt20`) students the percentage of alumni that donate increases by `r round(summary(fit)$coefficients["classeslt20", "Estimate"], 2)` percentage points. This is statistically significant at the 0.001 percent level.
+
+`classeslt20` `r ifelse(summary(fit)$coefficients["classeslt20", 4] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit)$coefficients["classeslt20", "Pr(>|t|)"], 2)`
+
+b. What is R-square for this model, and what is the interpretation?
+
+The variation in the percent of classes with less than 20 (`classeslt20`) students explain `r round(summary(fit)$r.square*100, 2)`% of the variation in the alumni giving rate (`alumnigivingrate`).
+
+## Problem 4
+
+Run a regression model with alumni giving rate as the dependent variable and the student/faculty ratio as the explanatory variable.
+
+a. What is the interpretation of the estimated coefficients? Make sure to discuss whether it is statistically significant and, if so, at what level.
+
+```{r}
+fit <- lm(alumnigivingrate~sfratio, data = Alumni)
+summary(fit)
+```
+
+As the student/faculty ratio (`sfratio`) increases by one the percentage of alumni that donate decreases by `r round(abs(summary(fit)$coefficients["sfratio", "Estimate"]), 2)` percentage points. This is statistically significant at the 0.001 percent level.
+
+`sfratio` `r ifelse(summary(fit)$coefficients["sfratio", 4] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit)$coefficients["sfratio", "Pr(>|t|)"], 2)`
+
+b. What is R-square for this model, and what is the interpretation?
+
+The variation in the student/faculty ratio (`sfratio`) explain `r round(summary(fit)$r.square*100, 2)`% of the variation in the alumni giving rate (`alumnigivingrate`).
+
+## Problem 5
+
+Discuss to what extent you can think of the explanatory variables as having a causal relationship with the dependent in these two cases.
+
