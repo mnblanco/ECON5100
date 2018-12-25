@@ -1,0 +1,135 @@
+---
+title: "Problem set 2: Simple linear regression"
+author: "Marjorie Blanco"
+date: "10/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(ggplot2)
+library(readr)
+```
+
+Read the baseball data set.
+
+```{r}
+baseball <- read_csv("data/baseball.csv")
+```
+
+## Question 1
+
+After downloading the data using the link below your next step is to do descriptive statistics on the variables that you will be using: number of wins and payroll in millions of dollars. 
+
+Based on the summary statistics, what is the average number of wins?
+
+```{r}
+summary(baseball$Wins)
+mean(baseball$Wins)
+```
+
+## Question 2
+
+What is the maximum payroll measured in million dollars?
+```{r}
+summary(baseball$Payroll.millions)
+max(baseball$Payroll.millions)
+```
+
+## Question 3
+
+To get a quick feel for the data you decide to check the correlation between the number of wins and payroll in millions. Using two decimal places what is the correlation between these two variables?
+
+```{r}
+cor(baseball$Payroll.millions,  baseball$Wins)
+round(cor(baseball$Payroll.millions,  baseball$Wins), 2)
+
+```
+
+## Question 4
+
+The group of investors believes that having a higher payroll would result in more wins and asks you to run a regression to examine this hypothesis.
+
+Pick `wins` as the dependent/response variable and `Payroll.millions` as the explanatory variable. Which of the values below best matches your b1 or slope parameter result?
+
+```{r}
+fit <- lm(Wins~Payroll.millions, data = baseball)
+summary(fit)
+
+p <- ggplot(baseball , aes(x = Payroll.millions, y = Wins)) +
+  geom_smooth(method = "lm") +
+  geom_point()
+p
+```
+
+$$Wins = 0.1725 * Payroll.millions + 65.7581$$
+
+## Question 5
+
+The estimated coefficient for the explanatory variable in the regression model you just ran tells us that for every additional **million dollars**  in **payroll** we expect wins to **increase**  by  **b1** `wins`.
+
+## Question 6
+
+Say that our null hypothesis is that the effect of payroll on number of wins is equal to zero and that the alternative hypothesis is that it is not equal to zero. Using a significance level of 5% we **reject** the null hypothesis because the p-value for the Payroll.million coefficient is **less than** `0.05`.
+
+## Question 7
+
+What is the predicted number of wins if the group of investors can achieve a payroll of 88 million dollars? Round to the closest integer (no decimal points).
+
+Easiest is to use your calculator for this one, but you can also use the R command `coef`:
+
+coef(modelName)["coefficientName"]
+
+Note that the names R uses for the coefficients are what is printed by the summary.
+
+```{r}
+wins <- 0.1725 * 88 + 65.7581
+round(wins, 0)
+
+new.df <- data.frame(Payroll.millions = c(88))
+round(predict(fit, new.df), 0)
+
+p + 
+  geom_hline(yintercept=predict(fit, new.df), linetype="dashed", 
+                color = "red", size=0.5) +
+  geom_vline(xintercept = new.df[1,], linetype="dotted", 
+                color = "blue", size=0.5)
+```
+
+## Question 8
+
+This prediction is very close to the mean in the descriptive statistics above because a regression line always runs through the means of the variables.
+
+## Question 9
+
+One of the investors in the group is very ambitious. She wants to raise enough funds to break the Yankees' hold on the largest payroll. Her plan is to raise enough funds to make the payroll 225 million dollars. What would your model predict that the number of wins would be for a team with a $225 million payroll? Use nearest integer again.
+
+```{r}
+wins <- 0.1725 * 225 + 65.7581
+round(wins, 0)
+
+new.df <- data.frame(Payroll.millions = c(225))
+round(predict(fit, new.df), 0)
+
+p + 
+  geom_hline(yintercept=predict(fit, new.df), linetype="dashed", 
+                color = "red", size=0.5) +
+  geom_vline(xintercept = new.df[1,], linetype="dotted", 
+                color = "blue", size=0.5)
+```
+
+## Question 10
+
+In addition to the predicted number of wins with $225 million in payroll you just found for the investor, what should you also tell her about this prediction and its reliability? 
+
+That the prediction is problematic because it is for a payroll number above those used to estimate the model.
+
+## Question 11
+
+The R-squared for your regression model is  `r round(summary(fit)$r.squared, 4)` . This means that variation in payroll explains `r round(summary(fit)$r.squared * 100, 0)` percent of the variation in wins.
+
+```{r}
+round(summary(fit)$r.squared, 4)
+```
+

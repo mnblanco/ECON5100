@@ -1,0 +1,90 @@
+---
+title: "Problem set 1: Review of basic stats"
+author: "Marjorie Blanco"
+date: "10/21/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(readr)
+```
+
+In baseball, as in the rest of the business world, it is generally believed that salary reflects ability. We would, therefore, expect baseball teams with a higher payroll to win more games. Refer to the CSV file in the link below which contains data from the 2009 baseball season.
+
+Read the baseball data set.
+
+```{r}
+baseball <- read_csv("data/baseball.csv")
+```
+
+## Question 1
+
+Indicate the sample mean payroll price in millions. Round your result to the nearest million.
+
+```{r}
+mean(baseball$Payroll.millions)
+```
+
+## Question 2
+
+Indicate the corresponding standard deviation. Round your result to the nearest million.
+
+```{r}
+sd(baseball$Payroll.millions)
+```
+
+## Question 3
+
+What is the correlation coefficient for payroll in millions and number of wins? Round your result to two decimal places.
+
+```{r}
+cor(baseball$Payroll.millions,  baseball$Wins)
+```
+
+
+The owner of a gasoline service station wants to study whether his advertising campaign has increased the amount of gasoline purchased by motorists at his station. Before the campaign the average purchase was 10 gallons. In a random sample of 60 motorists, the mean purchase is 11.3 gallons with a standard deviation of 3.1 gallons. At the 1% level of significance, test whether the average purchase is larger than 10 gallons.
+
+```{r}
+critical.t <- function(alpha = 0.05, tt = 1, n){
+    # alpha: Alpha Level
+    # tt: 1 Tailed or 2 Tailed
+    return(qt(1-(alpha/tt), n-1))
+}
+
+
+# Before the campaign the average purchase was 10 gallons
+mu0 <-  10   # hypothesized mean 
+
+# Sample mean purchase is 11.3 gallons
+xbar <- 11.3 # sample mean
+
+# Sample standard deviation of 3.1 gallons
+s <- 3.1 # sample standard deviation 
+
+# random sample of 60 motorists
+n <- 60
+
+# The null hypothesis is that μ <= 10.
+# The alternative hypothesis is that μ > 10.
+```
+
+## Question 8
+
+Compute the test statistic with 3 decimals.
+
+```{r}
+t <- (xbar-mu0)/(s/sqrt(n)) 
+t
+```
+
+## Question 9
+
+```{r}
+# 1% level of significance
+alpha = 0.01
+# find critical value 
+t.crit  <- critical.t(alpha, 1, n)
+t.crit
+```

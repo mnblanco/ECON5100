@@ -1,0 +1,131 @@
+---
+title: 'Problem set 3: Food stamp program participation'
+author: "Marjorie Blanco"
+date: "10/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(ggplot2)
+```
+
+```{r, echo=FALSE}
+load("data/econ5100_ps3.RData")
+# st.fips: State FIPS Code
+# name: State or District
+# year:" Year
+# unempr: (State Unemployment Rate) measured as a rate, that is between 0 and 1, rather than in percent
+# i.fsp.tot: Number of FSP Individuals
+# pop: Population
+# fsp.rate: (State FSP Participation Rate) measured as a rate, that is between 0 and 1 - snap$i.fsp.tot / snap$pop
+```
+
+# Question 1
+
+```{r, echo=FALSE}
+#moving up from 40% to 44% is a 4 percentage point increase
+#fsp.rate
+#0 ... 1
+#fsp percent
+#0 ... 100
+```
+
+A 1 (one) percentage point increase in a state's food stamp program participation is equal to a change of `1.0` in the variable "fsp.rate". 
+
+# Question 2
+
+Do descriptive statistics on the state unemployment rate (unempr). This tells you that the average percent unemployment in the data is approximately:
+
+```{r}
+summary(snap$unempr)
+mean(snap$unempr)
+```
+
+# Question 3
+
+Your descriptive statistics on the state food stamp program participation rate (fsp.rate) tells you that the average percent of the population that are on food stamps equals approximately
+
+```{r}
+summary(snap$fsp.rate)
+mean(snap$fsp.rate)
+```
+
+# Question 4
+
+What is the maximum percent of a state's population that was on food stamps in the data?
+
+```{r}
+snap$fsp.rate1 <- snap$i.fsp.tot / snap$pop
+summary(snap$fsp.rate)
+max(snap$fsp.rate)
+```
+
+# Question 5
+
+You run a regression with food stamp program participation ("fsp.rate") as the dependent variable (Y) and unemployment ("unempr") as the explanatory variable (X).
+
+Which of the values below best matches your b_1  (slope parameter) result?
+
+```{r}
+fit <- lm(fsp.rate~unempr, data = snap)
+summary(fit)
+
+p <- ggplot(snap , aes(x = unempr, y = fsp.rate)) +
+  geom_smooth(method = "lm") +
+  geom_point()
+p
+```
+
+# Question 6
+
+The estimated coefficient for the explanatory variable in the regression model you just ran tells us that for every `1 percentage point` increase in unemployment, we expect the participation in the food stamp program to `increase` by `1.25` `percentage points`.
+
+```{r}
+fsp.rate1 <- 1.252759  * 0.08 + 0.018082
+fsp.rate1
+
+fsp.rate2 <- 1.252759  * 0.081 + 0.018082
+fsp.rate2
+
+fsp.rate2 - fsp.rate1
+
+fsp.rate3 <- 1.252759  * 0.09 + 0.018082
+fsp.rate3
+
+fsp.rate3 - fsp.rate1
+```
+
+# Question 7
+
+Say that our null hypothesis is that the effect of unemployment on food stamp participation is equal to zero and that the alternative hypothesis is that it is not equal to zero. Using a significance level of 5% we `can` reject the null hypothesis because the `Pr(>|t|)` is `less than` `0.05`.
+
+# Question 8
+
+We want to know what the predicted percent participation in the food stamp program for a state with 8% unemployment. Using your regression results which of the numbers below do you think is the predicted percent participation. You *can* use R but it is probably faster to just calculate the number using your calculator. If you are using R, this is how you call a coefficient:
+
+coef(modelName)["coefficientName"]
+
+The coefficientName is exactly as it is written in the summary.
+
+```{r}
+fsp.rate <- 1.252759  * 0.08 + 0.018082
+round(fsp.rate*100, 2)
+
+fsp.rate <- 1.252759  * 0.081 + 0.018082
+round(fsp.rate*100, 2)
+
+new.df <- data.frame(unempr = c(0.08))
+round(predict(fit, new.df), 4)
+
+p + 
+  geom_hline(yintercept=predict(fit, new.df), linetype="dashed", 
+                color = "red", size=0.5) +
+  geom_vline(xintercept = new.df[1,], linetype="dotted", 
+                color = "blue", size=0.5)
+```
+
+# Question 9
+
+The R-squared for your regression model is ` 0.3161`. This means that the variation in `unemployment` explain `31.5` percent of the variation in `SNAP Participation`.
