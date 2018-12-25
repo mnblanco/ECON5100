@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 library(readr)
 library(ggplot2)
 library(tidyverse)
@@ -17,7 +18,7 @@ library(tidyverse)
 Alumni donations are an important source of revenue for colleges and universities. If administrators could determine the factors that influence increases in the percentages of alumni who make a donation, they might be able to implement policies that could lead to increased revenues. The data set Alumni.csv on Canvas contains information on alumni giving rate (almunigivingrate) and two possible determinants, percent of classes with less than 20 students (classlt20) and student/faculty ratio (sfratio).
 
 ```{r, echo=FALSE, message=FALSE}
-Alumni <- read_csv("../data/Alumni.csv")
+Alumni <- read_csv("data/Alumni.csv")
 ```
 
 ## Problem 1

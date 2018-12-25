@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE, message=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 library(ggplot2)
 library(readr)
 library(corrplot)
@@ -23,7 +24,7 @@ library(car)
 library(ggthemes)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
 flattenCorrMatrix <- function(cormat, pmat) {
   ut <- upper.tri(cormat)
   data.frame(
@@ -59,7 +60,7 @@ plotHistFunc <- function(df, title, na.rm = TRUE, ...) {
 What factors determine a person's wage is of just importance for policy. Today we are do some simple analyses using a dataset on individual characteristics and wage outcomes in 1980. You can find the CVS dataset under data in Canvas (Wages).
 
 ```{r, message=FALSE, echo=FALSE}
-wages <- read_csv("../data/wages.csv")
+wages <- read_csv("data/wages.csv")
 ```
 
 ## 1. Normal statistics
@@ -89,7 +90,7 @@ Find the correlations between the variables we will use. What stands out here?
 
 
 ```{r, echo=FALSE}
-wages <- wages  %>% na.omit() 
+#wages <- wages  %>% na.omit() 
 
 wages  %>% na.omit() %>% cor() -> M
 
@@ -298,6 +299,12 @@ linearHypothesis(fit3, Hnull)
 
 ## 10 Experience and tenure effect
 
+```{r}
+Hnull <- c("tenure = exper")
+linearHypothesis(fit3, Hnull)
+```
+
+
 Can you rule out that the effect of experience overall and tenure at the current job have the same effect on wage?(
 
 The coefficient of `IQ` changed from `r summary(fit3)$coefficients["IQ", "Estimate"]` to `r summary(fit4)$coefficients["IQ", "Estimate"]`.  The change is not significant.
@@ -317,6 +324,12 @@ If you have time, try to add parental education to the last model. Think about w
 ```{r}
 fit5 <- lm(wage~IQ+educ+age+exper+meduc+feduc, wages)
 summary(fit5)
+
+Hnull <- c("meduc = feduc")
+linearHypothesis(fit5, Hnull)
+
+Hnull <- c("age = exper")
+linearHypothesis(fit5, Hnull)
 ```
 
 - meduc and feduc are moderately correlated
