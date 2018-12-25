@@ -1,0 +1,25 @@
+---
+title: "Class Example 2"
+author: "Marjorie Blanco"
+date: "10/15/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+Alumni <- read_csv("data/Alumni.csv")
+
+fit <- lm(Alumni$alumnigivingrate~Alumni$classeslt20)
+summary(fit)
+
+
+fit <- lm(Alumni$alumnigivingrate~Alumni$sfratio)
+summary(fit)
+
+fit <- lm(Alumni$alumnigivingrate~Alumni$classeslt20+Alumni$sfratio)
+summary(fit)
+```
+

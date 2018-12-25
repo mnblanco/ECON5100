@@ -1,0 +1,58 @@
+---
+title: "In-class problem set 1"
+author: "Marjorie Blanco"
+date: "10/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r, echo=FALSE}
+Alumni <- read_csv("data/Alumni.csv")
+```
+
+```{r}
+ggplot(data = Alumni, aes(x =  classeslt20, y = alumnigivingrate)) +
+  theme_classic() +
+  geom_point() +
+  geom_smooth(method = "lm") 
+
+ggplot(data = Alumni, aes(x =  sfratio, y = alumnigivingrate)) +
+  theme_classic() +
+  geom_point() +
+  geom_smooth(method = "lm") 
+```
+
+# Problem 2
+
+```{r}
+Alumni$school <- NULL
+data_long <- gather(Alumni, factor_key=TRUE)
+data_long %>% group_by(key) %>%
+  summarise(mean= mean(value), sd= sd(value), max = max(value),min = min(value))
+```
+
+# Problem 3
+
+```{r}
+fit <- lm(alumnigivingrate~classeslt20, data = Alumni)
+summary(fit)
+```
+
+# Problem 4
+
+```{r}
+fit <- lm(alumnigivingrate~sfratio, data = Alumni)
+summary(fit)
+```
+
+# Problem 5
+
+```{r}
+
+```

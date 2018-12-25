@@ -1,0 +1,93 @@
+---
+title: "Class Example 1"
+author: "Marjorie Blanco"
+date: "10/8/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+```
+
+```{r}
+nfhs_3_csv <- read_csv("data/nfhs_3.csv")
+
+summary(nfhs_3_csv)
+head(nfhs_3_csv)
+names(nfhs_3_csv)
+```
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE}
+plotPointFunc <- function(df, na.rm = TRUE, ...) {
+    p <- ggplot() +
+      geom_point(data=df, aes(x = df$x, y = df$y)) +
+      theme_grey() +
+      ggtitle("Sample Error vs. Sample Size") +
+      ylab("Sample Error") +
+      xlab("Sample Size")
+    print(p)
+}
+
+plotDensFunc <- function(df, na.rm = TRUE, ...) {
+  nm <- names(df)
+  for (i in seq_along(nm)) {
+    p <- ggplot(data=df, aes_string(x = nm[i])) +
+      geom_density(alpha=.3, fill="dodgerblue")
+        print(p)
+  }
+}
+
+plotHistFunc <- function(df, f = "dodgerblue", na.rm = TRUE, ...) {
+  nm <- names(df)
+  for (i in seq_along(nm)) {
+    p <- ggplot(df,aes_string(x = nm[i])) + 
+      geom_histogram(alpha = .5, fill = f) 
+    print(p)
+  }
+}
+
+plotBarFunc <- function(x, na.rm = TRUE, ...) {
+  nm <- names(x)
+  for (i in seq_along(nm)) {
+    p <- ggplot(x,aes_string(x = nm[i])) + 
+      geom_bar(alpha = .5) 
+    print(p)
+  }
+}
+
+NA2mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
+
+NA2median <- function(x) replace(x, is.na(x), median(x, na.rm = TRUE))
+
+Zero2median <- function(x) replace(x, x==0, median(x, na.rm = TRUE))
+
+
+getCor <- function(x, val = 0) {
+  z <- cor(x, use = "na.or.complete")
+  zdf <- as.data.frame(as.table(z))
+  zdf <- arrange(zdf,desc(Freq))
+  print(zdf[zdf$Freq  > val & zdf$Var1 !=zdf$Var2 ,])
+}
+```
+
+```{r}
+numeric.index <- unlist(lapply(nfhs_3_csv, is.numeric)) 
+plotHistFunc(nfhs_3_csv[numeric.index])
+             
+plotBarFunc(nfhs_3_csv[-numeric.index])
+```
+
+```{r}
+hh <- select(nfhs_3_csv, hhid:hv208, hv270)
+hf <- select(nfhs_3_csv, hhid, matches("ha\\d_\\d\\d"))
+hm <- select(nfhs_3_csv, hhid, matches("hb"))
+educ <- select(nfhs_3_csv, hhid, starts_with("hvidx"), contains("hv108"))
+  
+educ_long_1 <- gather(educ, variable_name, var_value, -hhid)
+educ_long_2 <- separate(educ_long_1, variable_name, c("var", "number"), sep = "_")
+educ_long_3 <- spread(educ_long_2, key = var, value = var_value)
+educ_long_4 <- filter(educ_long_3, !is.na(hvidx))
+```
+

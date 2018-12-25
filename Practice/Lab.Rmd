@@ -1,0 +1,79 @@
+---
+title: "Lab"
+author: "Marjorie Blanco"
+date: "10/29/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(tidyverse)
+library(corrplot)
+library(car)
+```
+
+```{r}
+load("data/LPGA.RData")
+LPGA <- LPGA %>% mutate(earnings.usd.1 = earnings.usd/100000)
+```
+
+```{r}
+LPGA %>% select(scoring.avg, greens.in.reg, putting.avg) %>% cor() -> M
+corrplot(M, method="circle")
+
+fit1 <- lm(LPGA$earnings.usd~LPGA$scoring.avg)
+fit2 <- lm(LPGA$earnings.usd~LPGA$greens.in.reg)
+fit3 <- lm(LPGA$earnings.usd~LPGA$putting.avg)
+summary(fit1)
+summary(fit2)
+summary(fit3)
+
+fit1 <- lm(LPGA$earnings.usd.1~LPGA$scoring.avg)
+fit2 <- lm(LPGA$earnings.usd.1~LPGA$greens.in.reg)
+fit3 <- lm(LPGA$earnings.usd.1~LPGA$putting.avg)
+
+fit4 <- lm(LPGA$earnings.usd.1~LPGA$scoring.avg+LPGA$greens.in.reg)
+fit5 <- lm(LPGA$earnings.usd.1~LPGA$scoring.avg+LPGA$putting.avg)
+fit6 <- lm(LPGA$earnings.usd.1~LPGA$scoring.avg+LPGA$greens.in.reg+LPGA$putting.avg)
+
+summary(fit1)
+plot(fit1)
+summary(fit2)
+summary(fit3)
+summary(fit4)
+summary(fit5)
+summary(fit6)
+```
+
+```{r}
+car_ur <- lm (mpg~cyl+disp+hp+wt, data=mtcars)
+summary(car_ur)
+
+cor(mtcars$disp, mtcars$hp)
+
+car_r <- lm (mpg~cyl+wt, data=mtcars)
+summary(car_r)
+
+anova(car_r, car_ur)
+
+Hnull <- c("disp = 0", "hp = 0")
+linearHypothesis(car_ur, Hnull)
+
+r2_ur <- summary(car_ur)$r.square
+r2_r <- summary(car_r)$r.square
+
+q <- length(car_ur$coefficients) - length(car_r$coefficients)
+n_k_1 <- length(car_r$residuals) - length(car_ur$coefficients) 
+
+((r2_ur^2 - r2_r)^2/q)/((1-r2_ur) * n_k_1)
+
+
+qf(.9, df1 = q, df2 = n_k_1)
+
+
+Hnull <- c("disp = hp")
+linearHypothesis(car_ur, Hnull)
+```
+
+

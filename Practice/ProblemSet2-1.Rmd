@@ -1,0 +1,353 @@
+---
+title: "In Class Problem Set 2"
+author: "Marjorie Blanco"
+date: "10/29/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(ggplot2)
+library(readr)
+library(corrplot)
+library(stats)
+library(tidyverse)
+library(caret)
+library(leaps)
+library(MASS)
+library(dplyr)
+library(psych)
+library(Hmisc)
+library(PerformanceAnalytics)
+library(car)
+library(ggthemes)
+```
+
+```{r, echo=FALSE}
+flattenCorrMatrix <- function(cormat, pmat) {
+  ut <- upper.tri(cormat)
+  data.frame(
+    row = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor  =(cormat)[ut],
+    p = pmat[ut]
+  )
+}
+
+plot_coeffs <- function(mlr_model) {
+  coeffs <- coefficients(mlr_model)
+  mp <- barplot(coeffs, col="#3F97D0", xaxt='n', main="Regression Coefficients")
+  lablist <- names(coeffs)
+  text(mp, par("usr")[3], labels = lablist, srt = 45, adj = c(1.1,1.1), xpd = TRUE, cex=0.6)
+}
+
+plotHistFunc <- function(df, title, na.rm = TRUE, ...) {
+  for (i in colnames(df)) {
+    p <- ggplot(df, aes_string(x = i)) + 
+      theme_tufte() +
+      geom_histogram() +
+      theme(legend.position = "bottom", legend.title = element_blank()) +
+      geom_density(aes(y=..count../10))
+    print(p)
+  }
+}
+```
+
+
+# Problem Set 2
+
+```{r, message=FALSE, echo=FALSE}
+wages <- read_csv("data/wages.csv")
+```
+
+## 1. Normal statistics
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE}
+summary(wages)
+plotHistFunc(wages)
+```
+
+The various variables are highly skewed.
+
+## 2. Correlation
+
+```{r}
+
+#  	                       Coefficient, r
+# Strength of Association	Positive	Negative
+# None                    0.0 to 0.3  0.0 to -0.3
+# Weak                  	0.3 to 0.5 -0.3 to -0.5
+# Moderate	              0.5 to 0.7 -0.5 to -0.7
+# Strong                  0.7 to 1.0 -0.7 to -1.0
+```
+
+
+```{r, echo=FALSE}
+wages <- wages  %>% na.omit() 
+
+wages  %>% na.omit() %>% cor() -> M
+
+corrplot(M, method="color")
+
+chart.Correlation(wages[, c("lwage", "wage")], histogram=TRUE, pch=19)
+chart.Correlation(wages[, c("educ", "IQ")], histogram=TRUE, pch=19)
+chart.Correlation(wages[, c("meduc", "feduc")], histogram=TRUE, pch=19)
+chart.Correlation(wages[, c("sibs", "brthord")], histogram=TRUE, pch=19)
+
+
+res2 <- rcorr(as.matrix(wages))
+cor_m <- flattenCorrMatrix(res2$r, res2$P)
+cor_m %>% filter(abs(cor) > 0.45)
+```
+
+- lwage and wage are strongly correlated
+
+- educ and IQ are moderately correlated
+
+- meduc and feduc are moderately correlated
+
+- sibs and brthord are moderately correlated
+
+- exper and age are weakly correlated
+
+- educ and exper are weakly correlated
+
+## 3. Regression 1 (Hours and IQ)
+
+```{r}
+fit1 <- lm(wage~hours+IQ, wages)
+summary(fit1)
+plot_coeffs(fit1)
+```
+
+This means that if `hours` differed by one unit, wage will differ by `r summary(fit1)$coefficients["hours", "Estimate"]` units, on average.
+
+This means that if `IQ` differed by one unit, wage will differ by `r summary(fit1)$coefficients["IQ", "Estimate"]` units, on average.
+
+We would expect an average monthly earning (`wage`) to be `r summary(fit1)$coefficients["(Intercept)","Estimate"]`
+
+`hours` `r ifelse(summary(fit1)$coefficients["hours", 4] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit1)$coefficients["hours", "Pr(>|t|)"], 2)`
+
+`IQ` `r ifelse(summary(fit1)$coefficients["IQ", 4] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit1)$coefficients["IQ", "Pr(>|t|)"], 2)`
+
+The model is signficant
+
+The Adjusted R2 value is `r round(summary(fit1)$adj.r.square, 4)`. This tells us that `r round(summary(fit1)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours and IQ.
+
+## 4. Regression 2 (Education)
+
+```{r}
+fit2 <- lm(wage~hours+IQ+educ, wages)
+summary(fit2)
+plot_coeffs(fit2)
+```
+
+This means that if `hours` differed by one unit, wage will differ by `r summary(fit2)$coefficients["hours", "Estimate"]` units, on average.
+
+This means that if `IQ` differed by one unit, wage will differ by `r summary(fit2)$coefficients["IQ", "Estimate"]` units, on average.
+
+This means that if `educ` differed by one unit, wage will differ by `r summary(fit2)$coefficients["educ", "Estimate"]` units, on average.
+
+We would expect an average monthly earning (`wage`) to be `r summary(fit2)$coefficients["(Intercept)","Estimate"]`
+
+`hours` `r ifelse(summary(fit2)$coefficients["hours", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit2)$coefficients["hours", "Pr(>|t|)"], 2)`
+
+`IQ` `r ifelse(summary(fit2)$coefficients["IQ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit2)$coefficients["IQ", "Pr(>|t|)"], 2)`
+
+`educ` `r ifelse(summary(fit2)$coefficients["educ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit2)$coefficients["educ", "Pr(>|t|)"], 2)`
+
+The model is signficant
+
+The Adjusted R2 value is `r round(summary(fit2)$adj.r.square, 4)`. This tells us that `r round(summary(fit2)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours, IQ and educ.
+
+## 5. Explain
+
+```{r}
+fit21 <- lm(wage~educ, wages)
+summary(fit21)
+
+fit22 <- lm(wage~IQ, wages)
+summary(fit22)
+
+fit23 <- lm(wage~IQ+educ, wages)
+summary(fit23)
+```
+
+IQ and education are positively correlated, and IQ and wage are also positively correlated. I suspect the coefficient in the bivariate model to be biased/overestimated. This is confirmed by running the regression including `IQ` and `educ`. 
+
+The coefficient of `educ` decreased from `r summary(fit21)$coefficients["educ", "Estimate"]` to `r summary(fit23)$coefficients["educ", "Estimate"]`.  The bias in the bivariate model is large. 
+The coefficient of `IQ` decreased from `r summary(fit22)$coefficients["IQ", "Estimate"]` to `r summary(fit23)$coefficients["IQ", "Estimate"]`. The bias in the bivariate model is large. 
+
+
+## 6. Regression 3 (Experience and Tenure)
+
+```{r}
+fit3 <- lm(wage~hours+IQ+educ+age+exper+tenure, wages)
+summary(fit3)
+plot_coeffs(fit3)
+```
+
+This means that if `hours` differed by one unit wage will differ by `r summary(fit3)$coefficients["hours", "Estimate"]` units, on average.
+
+This means that if `IQ` differed by one unit wage will differ by `r summary(fit3)$coefficients["IQ", "Estimate"]` units, on average.
+
+This means that if `educ` differed by one unit wage will differ by `r summary(fit3)$coefficients["educ", "Estimate"]` units, on average.
+
+This means that if `age` differed by one unit wage will differ by `r summary(fit3)$coefficients["age", "Estimate"]` units, on average.
+
+This means that if `exper` differed by one unit wage will differ by `r summary(fit3)$coefficients["exper", "Estimate"]` units, on average.
+
+This means that if `tenure` differed by one unit wage will differ by `r summary(fit3)$coefficients["tenure", "Estimate"]` units, on average.
+
+We would expect an average monthly earning (`wage`) to be `r summary(fit3)$coefficients["(Intercept)","Estimate"]`
+
+`hours` `r ifelse(summary(fit3)$coefficients["hours", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["hours", "Pr(>|t|)"], 2)`
+
+`IQ` `r ifelse(summary(fit3)$coefficients["IQ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["IQ", "Pr(>|t|)"], 2)`
+
+`educ` `r ifelse(summary(fit3)$coefficients["educ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["educ", "Pr(>|t|)"], 2)`
+
+`age` `r ifelse(summary(fit3)$coefficients["age", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["age", "Pr(>|t|)"], 2)`
+
+`exper` `r ifelse(summary(fit3)$coefficients["exper", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["exper", "Pr(>|t|)"], 2)`
+
+`tenure` `r ifelse(summary(fit3)$coefficients["tenure", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit3)$coefficients["tenure", "Pr(>|t|)"], 2)`
+
+The model is signficant
+
+The Adjusted R2 value is `r round(summary(fit3)$adj.r.square, 4)`. This tells us that `r round(summary(fit3)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours, IQ, educ, age, exper, and tenure.
+
+## 7. Explain
+
+The coefficient for `hours` changed from `r summary(fit2)$coefficients["hours", "Estimate"]` to `r summary(fit3)$coefficients["hours", "Estimate"]`. This is not a significant change.
+
+The coefficient for `IQ` changed from `r summary(fit2)$coefficients["IQ", "Estimate"]` to `r summary(fit3)$coefficients["IQ", "Estimate"]`.  This is not a significant change.
+
+The coefficient for `educ` changed from `r summary(fit2)$coefficients["educ", "Estimate"]` to `r summary(fit3)$coefficients["educ", "Estimate"]`.  This is a significant change.
+
+```{r}
+fit31 <- lm(wage~educ, wages)
+summary(fit31)
+
+fit32 <- lm(wage~age, wages)
+summary(fit32)
+
+fit33 <- lm(wage~exper, wages)
+summary(fit33)
+
+fit34 <- lm(wage~age+exper, wages)
+summary(fit34)
+
+fit35 <- lm(wage~educ+exper, wages)
+summary(fit35)
+```
+
+
+Age and experience are positively correlated. I suspect the coefficient in the bivariate model to be biased/overestimated. This is confirmed by running the regression including `age` and `exper`. 
+
+The coefficient for `age` increased from `r summary(fit32)$coefficients["age", "Estimate"]` to `r summary(fit34)$coefficients["age", "Estimate"]`. The bias in the bivariate model is large. 
+
+The coefficient of `exper` decreased from `r summary(fit33)$coefficients["exper", "Estimate"]` to `r summary(fit34)$coefficients["exper", "Estimate"]`.  The bias in the bivariate model is large. 
+
+Education and experience are negatively correlated. I suspect the coefficient in the bivariate model to be biased/overestimated. This is confirmed by running the regression including `educ` and `exper`. 
+
+The coefficient of `exper` increased from `r summary(fit33)$coefficients["exper", "Estimate"]` to `r summary(fit35)$coefficients["exper", "Estimate"]`.  The bias in the bivariate model is large. 
+
+The coefficient for `educ` increased from `r summary(fit31)$coefficients["educ", "Estimate"]` to `r summary(fit35)$coefficients["educ", "Estimate"]`. The bias in the bivariate model is large. 
+
+
+## 8. F-test
+
+The model is significant
+
+The R2 value is `r round(summary(fit3)$r.square, 4)`.  The Adjusted R2 value is `r round(summary(fit3)$adj.r.square, 4)`. This tells us that `r round(summary(fit3)$adj.r.square*100, 2)`% of the variation in monthly earnings, as quantified by wage, is reduced by taking into account hours, IQ, educ, age, exper, and tenure.
+
+## 9. Drop tenure and hours
+
+Both `tenure` and `hours` are not significant, therefore can be removed.  The joint test fails to reject the null hypothesis that tenure = hours = 0.
+
+```{r}
+fit4 <- lm(wage~IQ+educ+age+exper, wages)
+summary(fit4)
+
+anova(fit3, fit4)
+
+Hnull <- c("tenure = 0", "hours = 0")
+linearHypothesis(fit3, Hnull)
+```
+
+## 10 Experience and tenure effect
+
+The coefficient of `IQ` changed from `r summary(fit3)$coefficients["IQ", "Estimate"]` to `r summary(fit4)$coefficients["IQ", "Estimate"]`.  The change is not significant.
+
+The coefficient of `educ` increased from `r summary(fit3)$coefficients["educ", "Estimate"]` to `r summary(fit4)$coefficients["educ", "Estimate"]`.  The change is not significant.
+
+The coefficient of `age` increased from `r summary(fit3)$coefficients["age", "Estimate"]` to `r summary(fit4)$coefficients["age", "Estimate"]`.  The change is not significant.
+
+The coefficient of `exper` increased from `r summary(fit3)$coefficients["exper", "Estimate"]` to `r summary(fit4)$coefficients["exper", "Estimate"]`.   The change is not significant.
+
+The Adjusted R2 value changed from `r round(summary(fit3)$adj.r.square, 4)` to `r round(summary(fit4)$adj.r.square, 4)`.
+
+## 11 Regression 4 (Parental Education)
+
+```{r}
+fit5 <- lm(wage~IQ+educ+age+exper+meduc+feduc, wages)
+summary(fit5)
+```
+
+- meduc and feduc are moderately correlated
+
+`IQ` `r ifelse(summary(fit5)$coefficients["IQ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["IQ", "Pr(>|t|)"], 2)`
+
+`educ` `r ifelse(summary(fit5)$coefficients["educ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["educ", "Pr(>|t|)"], 2)`
+
+`age` `r ifelse(summary(fit5)$coefficients["age", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["age", "Pr(>|t|)"], 2)`
+
+`exper` `r ifelse(summary(fit5)$coefficients["exper", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["exper", "Pr(>|t|)"], 2)`
+
+`feduc` `r ifelse(summary(fit5)$coefficients["feduc", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["feduc", "Pr(>|t|)"], 2)`
+
+`meduc` `r ifelse(summary(fit5)$coefficients["meduc", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit5)$coefficients["meduc", "Pr(>|t|)"], 2)`
+
+
+```{r}
+fit6 <- lm(wage~IQ+educ+age+exper+feduc, wages)
+summary(fit6)
+
+Hnull <- c("feduc = 0", "meduc = 0")
+linearHypothesis(fit5, Hnull)
+```
+
+The Adjusted R2 for changed from `r round(summary(fit5)$adj.r.square, 4)` to `r round(summary(fit6)$adj.r.square, 4)`.  The model is significant and all explanatory variables are signficant.
+
+`IQ` `r ifelse(summary(fit6)$coefficients["IQ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit6)$coefficients["IQ", "Pr(>|t|)"], 2)`
+
+`educ` `r ifelse(summary(fit6)$coefficients["educ", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit6)$coefficients["educ", "Pr(>|t|)"], 2)`
+
+`age` `r ifelse(summary(fit6)$coefficients["age", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit6)$coefficients["age", "Pr(>|t|)"], 2)`
+
+`exper` `r ifelse(summary(fit6)$coefficients["exper", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit6)$coefficients["exper", "Pr(>|t|)"], 2)`
+
+`feduc` `r ifelse(summary(fit6)$coefficients["feduc", "Pr(>|t|)"] < 0.05, "is", "is not")` statistically significant since p-value is `r round(summary(fit6)$coefficients["feduc", "Pr(>|t|)"], 2)`
+
+## Stepwise
+
+```{r}
+wages <- wages  %>% dplyr::select(-lwage) %>%na.omit()  
+# Fit the full model 
+full.model <- lm(wage ~., data = wages)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+trace = FALSE)
+summary(step.model)
+
+step.model <- stepAIC(full.model, direction = "backward", 
+trace = FALSE)
+summary(step.model)
+
+step.model <- stepAIC(full.model, direction = "forward", 
+trace = FALSE)
+summary(step.model)
+```
+
