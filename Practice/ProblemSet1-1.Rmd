@@ -13,7 +13,7 @@ library(tidyverse)
 ```
 
 ```{r, echo=FALSE}
-Alumni <- read_csv("data/Alumni.csv")
+Alumni <- read_csv("../data/Alumni.csv")
 ```
 
 ```{r}
